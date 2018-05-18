@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  site:
+    image: docs/docker.github.io:latest
+    ports:
+      - "4000:4000"
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 5s
+      restart_policy:
+        condition: on-failure
