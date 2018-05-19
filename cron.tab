@@ -1,3 +1,0 @@
-SHELL=/bin/bash
-HOME=/home/docker
-* * * * * $HOME/auto-redeploy.sh >> $HOME/cron.log 2>&1

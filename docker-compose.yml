@@ -1,13 +1,22 @@
 version: "3.3"
+
 services:
-  site:
-    image: docs/docker.github.io:latest
+  api:
+    image: joaofnfernandes/api
+    #build:
+    #  context: api
+    #  args:
+    #    - "APP=api"
     ports:
-      - "4000:4000"
-    deploy:
-      replicas: 3
-      update_config:
-        parallelism: 2
-        delay: 5s
-      restart_policy:
-        condition: on-failure
+      - "8000:8000"
+
+  msgq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    hostname: messagequeue
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+    ports: # only needed for local development
+      - "5672:5672" # amqp without TLS
+      - "15672:15672" ## admin UI, and HTTP API
