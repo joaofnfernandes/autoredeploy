@@ -18,4 +18,6 @@ RUN go build -v -a -o /usr/local/bin/api .
 
 FROM alpine:latest
 COPY --from=builder /usr/local/bin/api /usr/local/bin/api
+# Default port
+EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/api"]

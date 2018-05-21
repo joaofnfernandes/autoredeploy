@@ -2,32 +2,36 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/urfave/cli"
 )
 
-type ServerConfig struct {
-	iface string
-	port  string
-}
-
-func defaultServerConfig() *ServerConfig {
-	return &ServerConfig{"0.0.0.0", "8000"}
-}
-func (c *ServerConfig) String() string {
-	return fmt.Sprintf("%s:%s", c.iface, c.port)
-}
+var apiServerCfg ApiServerConfig
 
 func main() {
-	cfg := defaultServerConfig()
-	log.Printf("[API] listening on %s\n", cfg)
+	app := cli.NewApp()
+	app.Name = "API server"
+	app.Flags = flags
+	app.Action = serve
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatalf("[API] error setting up server: %s", err)
+	}
+}
+
+func serve(c *cli.Context) error {
+	apiServerCfg = ApiServerConfigFromContext(c)
+	log.Printf("[API] listening on %s\n", apiServerCfg.serverConfig.String())
 
 	http.HandleFunc("/", addToMessageQueue)
-	err := http.ListenAndServe(defaultServerConfig().String(), nil)
+	err := http.ListenAndServe(apiServerCfg.serverConfig.String(), nil)
 	if err != nil {
-		log.Fatalf("[API] error setting up server: %s")
+		return err
 	}
+	return nil
 }
 
 func addToMessageQueue(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +39,7 @@ func addToMessageQueue(w http.ResponseWriter, r *http.Request) {
 	buf.ReadFrom(r.Body)
 	body := buf.String()
 
-	err := Write(body)
+	err := Write(apiServerCfg, body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

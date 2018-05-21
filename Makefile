@@ -34,4 +34,4 @@ API_SOUCES=$(shell find api -type f)
 bin/api: $(API_SOURCES)
 	@echo "Building $(REPOSITORY)/$(@F) image"
 	@cd $(@F); docker build -t $(REPOSITORY)/$(@F) .; cd $(CWD)
-	@touch $@
+	@mkdir -p bin; touch $@

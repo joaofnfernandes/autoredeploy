@@ -7,68 +7,57 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const MAX_QUEUE_LEN = 10
+
 type mq struct {
-	config  *config
+	config  *ApiServerConfig
 	channel *amqp.Channel
 }
 
 // Singleton
 var instance *mq
 
-type config struct {
-	user      string
-	pass      string
-	host      string
-	port      string
-	protocol  string
-	queueName string
-}
+// TODO: where should the connection be closed?
+func createMessageQueue(cfg ApiServerConfig) (*mq, error) {
 
-func (c *config) String() string {
-	return fmt.Sprintf("%s://%s:%s@%s:%s/", c.protocol, c.user, c.pass, c.host, c.port)
-}
-
-func defaultConfig() *config {
-	return &config{"admin", "password", "msgq", "5672", "amqp", "webhook"}
-}
-
-// todo: where should the connection be closed?
-func defaultMessageQueue() (*mq, error) {
-	config := defaultConfig()
-	conn, err := amqp.Dial(config.String())
+	conn, err := amqp.Dial(cfg.mqConfig.connectionStr.String())
 	if err != nil {
-		errMsg := fmt.Sprintf("[API] Failed to create default message queue: %s", err)
+		errMsg := fmt.Sprintf("[API] Failed to connect to message queue: %s", err)
 		return nil, errors.New(errMsg)
 	}
 
 	ch, err := conn.Channel()
 	if err != nil {
-		errMsg := fmt.Sprintf("[API] Failed to create default message queue channel: %s", err)
+		errMsg := fmt.Sprintf("[API] Failed to create channel in message queue: %s", err)
 		return nil, errors.New(errMsg)
 	}
 
+	// Limit queue length. When queue is full, older messages are discarded
+	args := amqp.Table{}
+	args["x-max-length"] = int16(MAX_QUEUE_LEN)
+
 	// Make sure queue exists
 	_, err = ch.QueueDeclare(
-		config.queueName, //name
-		false,            // durable
-		false,            // delete when unused
-		false,            // exclusive
-		false,            // no-wait
-		nil,              // args
+		cfg.mqConfig.queueName, //name
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		args,  // args
 	)
 	if err != nil {
 		errMsg := fmt.Sprintf("[API] Failed to create default queue: %s", err)
 		return nil, errors.New(errMsg)
 	}
 
-	return &mq{config, ch}, nil
+	return &mq{&cfg, ch}, nil
 }
 
-// todo: we should only accept json
-func Write(msg string) error {
+// TODO: we should only accept json
+func Write(cfg ApiServerConfig, msg string) error {
 	if instance == nil {
 		var err error
-		instance, err = defaultMessageQueue()
+		instance, err = createMessageQueue(cfg)
 		if err != nil {
 			return err
 		}
@@ -80,7 +69,7 @@ func Write(msg string) error {
 
 	err := instance.channel.Publish(
 		"", // exhange
-		instance.config.queueName, // routing key
+		cfg.mqConfig.queueName, // routing key
 		false,   // mandatory
 		false,   // immediate
 		content, // message content
