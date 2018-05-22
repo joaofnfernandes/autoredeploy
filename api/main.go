@@ -27,7 +27,7 @@ func serve(c *cli.Context) error {
 	apiServerCfg = ApiServerConfigFromContext(c)
 	log.Printf("[API] listening on %s\n", apiServerCfg.ServerConfig.String())
 
-	http.HandleFunc("/", addToMessageQueue)
+	http.HandleFunc("/", run)
 	err := http.ListenAndServe(apiServerCfg.ServerConfig.String(), nil)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func serve(c *cli.Context) error {
 	return nil
 }
 
-func addToMessageQueue(w http.ResponseWriter, r *http.Request) {
+func run(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.Body)
 	body := buf.String()

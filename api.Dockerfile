@@ -15,7 +15,9 @@ COPY api api
 COPY pkg pkg
 
 # Get dependencies, and build
-# RUN dep ensure # All dependencies should be vendored
+# All dependencies should be vendored in. This is only needed if we
+# don't include the pkg in the container image
+# RUN dep ensure
 RUN go build -v -a -o /usr/local/bin/api ./api
 
 FROM alpine:latest
