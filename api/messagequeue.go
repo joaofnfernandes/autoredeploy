@@ -10,8 +10,8 @@ import (
 const MAX_QUEUE_LEN = 10
 
 type mq struct {
-	config  *ApiServerConfig
-	channel *amqp.Channel
+	config  ApiServerConfig
+	channel amqp.Channel
 }
 
 // Singleton
@@ -19,8 +19,7 @@ var instance *mq
 
 // TODO: where should the connection be closed?
 func createMessageQueue(cfg ApiServerConfig) (*mq, error) {
-
-	conn, err := amqp.Dial(cfg.mqConfig.connectionStr.String())
+	conn, err := amqp.Dial(cfg.MqConfig.ConnectionStr.String())
 	if err != nil {
 		errMsg := fmt.Sprintf("[API] Failed to connect to message queue: %s", err)
 		return nil, errors.New(errMsg)
@@ -38,7 +37,7 @@ func createMessageQueue(cfg ApiServerConfig) (*mq, error) {
 
 	// Make sure queue exists
 	_, err = ch.QueueDeclare(
-		cfg.mqConfig.queueName, //name
+		cfg.MqConfig.QueueName, //name
 		false, // durable
 		false, // delete when unused
 		false, // exclusive
@@ -50,7 +49,7 @@ func createMessageQueue(cfg ApiServerConfig) (*mq, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	return &mq{&cfg, ch}, nil
+	return &mq{cfg, *ch}, nil
 }
 
 // TODO: we should only accept json
@@ -69,12 +68,13 @@ func Write(cfg ApiServerConfig, msg string) error {
 
 	err := instance.channel.Publish(
 		"", // exhange
-		cfg.mqConfig.queueName, // routing key
+		cfg.MqConfig.QueueName, // routing key
 		false,   // mandatory
 		false,   // immediate
 		content, // message content
 	)
 	if err != nil {
+		instance = nil
 		return errors.New(fmt.Sprintf("[API] failed to write to message queue: %s", err))
 	}
 	return nil

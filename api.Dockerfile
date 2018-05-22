@@ -1,7 +1,7 @@
 FROM golang:1.10-alpine AS builder
 
 # Enable edge repository
-COPY alpine.repo .
+COPY api/alpine.repo .
 RUN cat alpine.repo >> /etc/apk/repositories
 
 # Add dependencies
@@ -11,7 +11,9 @@ RUN apk add --no-cache \
   git
 
 WORKDIR /go/src/github.com/api
-COPY . .
+COPY api .
+COPY pkg .
+
 # Get dependencies, and build
 RUN dep ensure
 RUN go build -v -a -o /usr/local/bin/api .

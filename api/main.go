@@ -25,10 +25,10 @@ func main() {
 
 func serve(c *cli.Context) error {
 	apiServerCfg = ApiServerConfigFromContext(c)
-	log.Printf("[API] listening on %s\n", apiServerCfg.serverConfig.String())
+	log.Printf("[API] listening on %s\n", apiServerCfg.ServerConfig.String())
 
 	http.HandleFunc("/", addToMessageQueue)
-	err := http.ListenAndServe(apiServerCfg.serverConfig.String(), nil)
+	err := http.ListenAndServe(apiServerCfg.ServerConfig.String(), nil)
 	if err != nil {
 		return err
 	}
