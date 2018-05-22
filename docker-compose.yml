@@ -3,7 +3,9 @@ version: "3.3"
 services:
   api:
     image: joaofnfernandes/api
-    build: ./api
+    build:
+      dockerfile: api.Dockerfile
+      context: .
     #  args:
     #    - "APP=api"
     environment:
@@ -16,6 +18,10 @@ services:
       API_PORT: 8000
     ports:
       - "8000:8000"
+
+#  agent:
+#    image: joaofnfernandes/agent
+#    build: ./agent
 
   msgq:
     image: rabbitmq:3-management-alpine

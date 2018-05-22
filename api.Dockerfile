@@ -10,13 +10,13 @@ RUN apk add --no-cache \
   dep \
   git
 
-WORKDIR /go/src/github.com/api
-COPY api .
-COPY pkg .
+WORKDIR /go/src/github.com/joaofnfernandes/autoredeploy
+COPY api api
+COPY pkg pkg
 
 # Get dependencies, and build
-RUN dep ensure
-RUN go build -v -a -o /usr/local/bin/api .
+# RUN dep ensure # All dependencies should be vendored
+RUN go build -v -a -o /usr/local/bin/api ./api
 
 FROM alpine:latest
 COPY --from=builder /usr/local/bin/api /usr/local/bin/api
