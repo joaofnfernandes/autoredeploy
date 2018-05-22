@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joaofnfernandes/autoredeploy/pkg/webhook"
 	"github.com/urfave/cli"
 )
 
@@ -39,13 +40,19 @@ func addToMessageQueue(w http.ResponseWriter, r *http.Request) {
 	buf.ReadFrom(r.Body)
 	body := buf.String()
 
-	err := Write(apiServerCfg, body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	webhook := webhook.Unmarshal(body)
+	if webhook.IsValid() {
+		err := Write(apiServerCfg, body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+		} else {
+			log.Printf("[API] wrote to message queue: %s\n", body)
+			w.WriteHeader(http.StatusCreated)
+		}
 	} else {
-		log.Printf("[API] wrote to message queue: %s\n", body)
-		w.WriteHeader(http.StatusOK)
+		log.Printf("[API] Invalid webhook: %s\n", body)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 }
