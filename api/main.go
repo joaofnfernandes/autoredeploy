@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joaofnfernandes/autoredeploy/pkg/mq"
 	"github.com/joaofnfernandes/autoredeploy/pkg/webhook"
 	"github.com/urfave/cli"
 )
@@ -42,7 +43,7 @@ func run(w http.ResponseWriter, r *http.Request) {
 
 	webhook := webhook.Unmarshal(body)
 	if webhook.IsValid() {
-		err := Write(apiServerCfg, body)
+		err := mq.Write(apiServerCfg.MqConfig, body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
